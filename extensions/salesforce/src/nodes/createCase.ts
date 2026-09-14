@@ -1,7 +1,7 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { escapeSoqlString } from "../soql";
-import { describePath, openResolverSession, picklistOptions, summariseError } from "../optionsResolver";
+import { describePath, diagnosticOptions, openResolverSession, picklistOptions, probeResolverRuntime, summariseError } from "../optionsResolver";
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
     config: {
@@ -62,13 +62,18 @@ export const createCaseNode = createNodeDescriptor({
             optionsResolver: {
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
+                    const probe = probeResolverRuntime(api, config);
+
                     try {
-                        const session = await openResolverSession(api, config.oauthConnection);
+                        const session = await openResolverSession(api, config?.oauthConnection);
                         const describeBody = await session.getJson(describePath("Case"));
 
                         return picklistOptions(describeBody, "Case", "Status");
                     } catch (error) {
-                        throw new Error(`Could not load Case.Status values: ${summariseError(error)}`);
+                        return diagnosticOptions(
+                            "Case.Status did not load - read the entries below",
+                            `${probe} ERROR=${summariseError(error)}`
+                        );
                     }
                 }
             }
@@ -86,13 +91,18 @@ export const createCaseNode = createNodeDescriptor({
             optionsResolver: {
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
+                    const probe = probeResolverRuntime(api, config);
+
                     try {
-                        const session = await openResolverSession(api, config.oauthConnection);
+                        const session = await openResolverSession(api, config?.oauthConnection);
                         const describeBody = await session.getJson(describePath("Case"));
 
                         return picklistOptions(describeBody, "Case", "Origin");
                     } catch (error) {
-                        throw new Error(`Could not load Case.Origin values: ${summariseError(error)}`);
+                        return diagnosticOptions(
+                            "Case.Origin did not load - read the entries below",
+                            `${probe} ERROR=${summariseError(error)}`
+                        );
                     }
                 }
             }

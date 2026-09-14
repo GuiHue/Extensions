@@ -155,3 +155,48 @@ export const picklistOptions = (describeBody: any, entityName: string, fieldName
             value: picklistValue.value
         }));
 };
+
+/**
+ * Reports what the resolver runtime actually handed this function.
+ *
+ * The point is to separate three failures that all look identical in the editor:
+ * the resolver never ran, it ran without an HTTP transport, or it ran without
+ * usable Connected App credentials. Only the presence and length of the key and
+ * secret are reported, never their values.
+ */
+export const probeResolverRuntime = (api: any, config: any): string => {
+    const connection = config?.oauthConnection;
+    const describeSecret = (value: any): string =>
+        value ? `present(len=${String(value).length})` : "MISSING";
+
+    return [
+        `api=${typeof api}`,
+        `api.httpRequest=${typeof api?.httpRequest}`,
+        `configKeys=[${Object.keys(config || {}).join(",")}]`,
+        `oauthConnection=${typeof connection}`,
+        `connectionKeys=[${Object.keys(connection || {}).join(",")}]`,
+        `instanceUrl=${connection?.instanceUrl || "MISSING"}`,
+        `consumerKey=${describeSecret(connection?.consumerKey)}`,
+        `consumerSecret=${describeSecret(connection?.consumerSecret)}`
+    ].join(" ");
+};
+
+/**
+ * Renders a diagnostic as the dropdown's own options.
+ *
+ * A thrown error may reach the editor only as a generic "unable to retrieve
+ * values", which discards everything useful. The options list is the one channel
+ * the resolver is guaranteed to render, so the detail is returned through it,
+ * split into short entries so nothing is lost to truncation. Every entry carries
+ * a distinct non-empty value so the list cannot be rejected or de-duplicated.
+ */
+export const diagnosticOptions = (heading: string, detail: string): IResolverOption[] => {
+    const chunks = String(detail).match(/.{1,64}/g) || ["(no detail)"];
+
+    return [{ label: heading, value: "__diagnostic_0" }].concat(
+        chunks.slice(0, 14).map((chunk: string, index: number) => ({
+            label: `${index + 1}. ${chunk}`,
+            value: `__diagnostic_${index + 1}`
+        }))
+    );
+};
