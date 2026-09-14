@@ -72,6 +72,11 @@ export const createCaseNode = createNodeDescriptor({
                     try {
                         const { consumerKey, consumerSecret, instanceUrl }: ICreateCaseParams["config"]["oauthConnection"] = config.oauthConnection;
 
+                        // Phase 1 diagnostic: `httpRequest` is optional on IHttpExecutionApi.
+                        if (typeof api.httpRequest !== "function") {
+                            throw new Error("[status=n/a] api.httpRequest is not available in the optionsResolver runtime.");
+                        }
+
                         const data = `grant_type=client_credentials&client_id=${encodeURIComponent(consumerKey)}&client_secret=${encodeURIComponent(consumerSecret)}`;
 
                         // Step 1: Authenticate with Salesforce using OAuth2
@@ -104,10 +109,19 @@ export const createCaseNode = createNodeDescriptor({
                             value: status.Id,
                         }));
                     } catch (error) {
-                        const errorMessage = error instanceof Error
+                        // Phase 1 diagnostic: surface the Salesforce response body, which
+                        // carries the actionable `error` / `error_description` fields that
+                        // `error.message` alone ("Request failed with status code 400") drops.
+                        const httpError: any = error;
+                        const httpStatus = httpError?.response?.status;
+                        const responseBody = httpError?.response?.data;
+                        const detail = responseBody === undefined || responseBody === null
+                            ? undefined
+                            : (typeof responseBody === "string" ? responseBody : JSON.stringify(responseBody));
+                        const baseMessage = error instanceof Error
                             ? error.message
                             : JSON.stringify(error);
-                        throw new Error(errorMessage);
+                        throw new Error(`[status=${httpStatus ?? "n/a"}] ${baseMessage}${detail ? ` :: ${detail}` : ""}`);
                     }
                 }
             }
@@ -127,6 +141,11 @@ export const createCaseNode = createNodeDescriptor({
                 resolverFunction: async ({ api, config }) => {
                     try {
                         const { consumerKey, consumerSecret, instanceUrl }: ICreateCaseParams["config"]["oauthConnection"] = config.oauthConnection;
+
+                        // Phase 1 diagnostic: `httpRequest` is optional on IHttpExecutionApi.
+                        if (typeof api.httpRequest !== "function") {
+                            throw new Error("[status=n/a] api.httpRequest is not available in the optionsResolver runtime.");
+                        }
 
                         // Step 1: Authenticate with Salesforce using OAuth2
                         const data = `grant_type=client_credentials&client_id=${encodeURIComponent(consumerKey)}&client_secret=${encodeURIComponent(consumerSecret)}`;
@@ -162,10 +181,19 @@ export const createCaseNode = createNodeDescriptor({
                             }));
 
                     } catch (error) {
-                        const errorMessage = error instanceof Error
+                        // Phase 1 diagnostic: surface the Salesforce response body, which
+                        // carries the actionable `error` / `error_description` fields that
+                        // `error.message` alone ("Request failed with status code 400") drops.
+                        const httpError: any = error;
+                        const httpStatus = httpError?.response?.status;
+                        const responseBody = httpError?.response?.data;
+                        const detail = responseBody === undefined || responseBody === null
+                            ? undefined
+                            : (typeof responseBody === "string" ? responseBody : JSON.stringify(responseBody));
+                        const baseMessage = error instanceof Error
                             ? error.message
                             : JSON.stringify(error);
-                        throw new Error(errorMessage);
+                        throw new Error(`[status=${httpStatus ?? "n/a"}] ${baseMessage}${detail ? ` :: ${detail}` : ""}`);
                     }
                 },
             }

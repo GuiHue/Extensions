@@ -1,6 +1,6 @@
 {
-	"name": "salesforce",
-	"version": "4.4.0",
+	"name": "salesforce-pxc",
+	"version": "4.4.1-pxc.1",
 	"description": "This Extension integrates with all Salesforce Clouds",
 	"main": "build/module.js",
 	"scripts": {
