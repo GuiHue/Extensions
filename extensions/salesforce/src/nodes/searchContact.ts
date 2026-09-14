@@ -1,7 +1,7 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { assertSoqlFieldName, escapeSoqlLike } from "../soql";
-import { describePath, diagnosticOptions, openResolverSession, probeResolverRuntime, summariseError, tryResolverLog } from "../optionsResolver";
+import { describePath, openResolverSession, probeResolverRuntime, safeResolve } from "../optionsResolver";
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
     config: {
@@ -69,32 +69,19 @@ export const searchContactNode = createNodeDescriptor({
             },
             optionsResolver: {
                 dependencies: ["connection"],
-                resolverFunction: async ({ api, config }) => {
-                    const probe = probeResolverRuntime(api, config);
-                    const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
-
-                    try {
+                resolverFunction: async ({ api, config }) => safeResolve(
+                    async () => {
                         const session = await openResolverSession(api, config?.connection);
                         const describeBody = await session.getJson(describePath("Contact"));
                         const fields: ISalesforceContactField[] = describeBody?.fields || [];
-
-                        if (fields.length === 0) {
-                            throw new Error("The Contact describe response contained no fields.");
-                        }
 
                         return fields.map((field: ISalesforceContactField) => ({
                             label: field.label,
                             value: field.name,
                         }));
-                    } catch (error) {
-                        tryResolverLog(api, `Cognigy Salesforce resolver failed: ${probe} ERROR=${summariseError(error)}`);
-
-                        return diagnosticOptions(
-                            "Contact fields did not load - read the entries below",
-                            `${probe} ${logged} ERROR=${summariseError(error)}`
-                        );
-                    }
-                },
+                    },
+                    () => probeResolverRuntime(api, config)
+                ),
             }
         },
         {

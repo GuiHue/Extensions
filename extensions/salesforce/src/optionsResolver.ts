@@ -223,7 +223,7 @@ export const tryResolverLog = (api: any, message: string): string => {
 };
 
 export const probeResolverRuntime = (api: any, config: any): string => {
-    const connection = config?.oauthConnection;
+    const connection = config?.connection;
     const describeSecret = (value: any): string =>
         value ? `present(len=${String(value).length})` : "MISSING";
 
@@ -231,7 +231,7 @@ export const probeResolverRuntime = (api: any, config: any): string => {
         `api=${typeof api}`,
         `apiMembers={${apiSurface(api)}}`,
         `configKeys=[${Object.keys(config || {}).join(",")}]`,
-        `oauthConnection=${typeof connection}`,
+        `connection=${typeof connection}`,
         `connectionKeys=[${Object.keys(connection || {}).join(",")}]`,
         `instanceUrl=${connection?.instanceUrl || "MISSING"}`,
         `consumerKey=${describeSecret(connection?.consumerKey)}`,
@@ -240,21 +240,59 @@ export const probeResolverRuntime = (api: any, config: any): string => {
 };
 
 /**
- * Renders a diagnostic as the dropdown's own options.
- *
- * A thrown error may reach the editor only as a generic "unable to retrieve
- * values", which discards everything useful. The options list is the one channel
- * the resolver is guaranteed to render, so the detail is returned through it,
- * split into short entries so nothing is lost to truncation. Every entry carries
- * a distinct non-empty value so the list cannot be rejected or de-duplicated.
+ * Characters kept in an option label. Returned options are validated against a
+ * schema and invalid ones are silently ignored, which renders as "no options",
+ * so labels are reduced to a conservative set and a short length.
  */
-export const diagnosticOptions = (heading: string, detail: string): IResolverOption[] => {
-    const chunks = String(detail).match(/.{1,64}/g) || ["(no detail)"];
+const LABEL_UNSAFE = /[^A-Za-z0-9 .,:;_/@()=+-]/g;
 
-    return [{ label: heading, value: "__diagnostic_0" }].concat(
-        chunks.slice(0, 14).map((chunk: string, index: number) => ({
-            label: `${index + 1}. ${chunk}`,
-            value: `__diagnostic_${index + 1}`
+const toDiagnosticOptions = (detail: string): IResolverOption[] => {
+    const cleaned = String(detail).replace(LABEL_UNSAFE, " ").replace(/\s+/g, " ").trim();
+    const chunks = cleaned.match(/.{1,38}/g) || ["no detail"];
+
+    return [{ label: "DIAG read the entries below", value: "d0" }].concat(
+        chunks.slice(0, 12).map((chunk: string, index: number) => ({
+            label: `${index + 1} ${chunk}`,
+            value: `d${index + 1}`
         }))
     );
+};
+
+/**
+ * Runs an options resolver so that it always returns a schema-valid array.
+ *
+ * Everything runs inside the guard, the diagnostic build is itself guarded, and
+ * an empty or malformed result is replaced rather than returned. A resolver that
+ * throws shows only "error loading select options" and a resolver returning
+ * invalid options shows "no options"; both discard the reason, so neither is
+ * allowed to happen.
+ */
+export const safeResolve = async (
+    work: () => Promise<IResolverOption[]>,
+    context: () => string
+): Promise<IResolverOption[]> => {
+    try {
+        const options = await work();
+
+        if (Array.isArray(options) && options.length > 0) {
+            return options
+                .filter((option: any) => option && option.value !== undefined && option.value !== null)
+                .map((option: any) => ({
+                    label: String(option.label === undefined || option.label === null ? option.value : option.label).slice(0, 120),
+                    value: String(option.value)
+                }));
+        }
+
+        return toDiagnosticOptions("EMPTY Salesforce returned no usable values");
+    } catch (error) {
+        let detail: string;
+
+        try {
+            detail = `${context()} ERROR ${summariseError(error)}`;
+        } catch (contextError) {
+            detail = `diagnostic failed ${contextError instanceof Error ? contextError.message : "unknown"}`;
+        }
+
+        return toDiagnosticOptions(detail);
+    }
 };
