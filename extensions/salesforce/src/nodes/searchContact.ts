@@ -5,7 +5,7 @@ import { describePath, diagnosticOptions, openResolverSession, probeResolverRunt
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
     config: {
-        oauthConnection: {
+        connection: {
             consumerKey: string;
             consumerSecret: string;
             instanceUrl: string;
@@ -41,7 +41,7 @@ export const searchContactNode = createNodeDescriptor({
     summary: "Find Salesforce Contacts by any field value",
     fields: [
         {
-            key: "oauthConnection",
+            key: "connection",
             label: {
                 deDE: "Salesforce Connected App",
                 default: "Salesforce Connected App",
@@ -65,54 +65,16 @@ export const searchContactNode = createNodeDescriptor({
             },
             defaultValue: "Phone",
             params: {
-                options: [
-                    {
-                        label: "Phone",
-                        value: "Phone"
-                    },
-                    {
-                        label: "Mobile Phone",
-                        value: "MobilePhone"
-                    },
-                    {
-                        label: "Home Phone",
-                        value: "HomePhone"
-                    },
-                    {
-                        label: "Email",
-                        value: "Email"
-                    },
-                    {
-                        label: "First Name",
-                        value: "FirstName"
-                    },
-                    {
-                        label: "Last Name",
-                        value: "LastName"
-                    },
-                    {
-                        label: "Full Name",
-                        value: "Name"
-                    },
-                    {
-                        label: "Contact ID",
-                        value: "Id"
-                    },
-                    {
-                        label: "Account ID",
-                        value: "AccountId"
-                    }
-                ],
                 required: true,
             },
             optionsResolver: {
-                dependencies: ["oauthConnection"],
+                dependencies: ["connection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
                     const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
-                        const session = await openResolverSession(api, config?.oauthConnection);
+                        const session = await openResolverSession(api, config?.connection);
                         const describeBody = await session.getJson(describePath("Contact"));
                         const fields: ISalesforceContactField[] = describeBody?.fields || [];
 
@@ -216,7 +178,7 @@ export const searchContactNode = createNodeDescriptor({
         }
     ],
     form: [
-        { type: "field", key: "oauthConnection" },
+        { type: "field", key: "connection" },
         { type: "field", key: "contactField" },
         { type: "field", key: "contactFieldValue" },
         { type: "section", key: "storage" },
@@ -233,11 +195,11 @@ export const searchContactNode = createNodeDescriptor({
     },
     function: async ({ cognigy, config, childConfigs }: ISearchContactParams) => {
         const { api } = cognigy;
-        const { contactField, contactFieldValue, oauthConnection, storeLocation, contextKey, inputKey } = config;
+        const { contactField, contactFieldValue, connection, storeLocation, contextKey, inputKey } = config;
 
         try {
 
-            const salesforceConnection = await authenticate(oauthConnection);
+            const salesforceConnection = await authenticate(connection);
 
             const searchField: string = assertSoqlFieldName(contactField);
             const searchValue: string = escapeSoqlLike(contactFieldValue);

@@ -5,7 +5,7 @@ import { describePath, diagnosticOptions, openResolverSession, picklistOptions, 
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
     config: {
-        oauthConnection: {
+        connection: {
             consumerKey: string;
             consumerSecret: string;
             instanceUrl: string;
@@ -38,7 +38,7 @@ export const createCaseNode = createNodeDescriptor({
     },
     fields: [
         {
-            key: "oauthConnection",
+            key: "connection",
             label: {
                 deDE: "Salesforce Connected App",
                 default: "Salesforce Connected App",
@@ -57,34 +57,16 @@ export const createCaseNode = createNodeDescriptor({
                 default: "Status",
             },
             params: {
-                options: [
-                    {
-                        label: "New",
-                        value: "New"
-                    },
-                    {
-                        label: "Working",
-                        value: "Working"
-                    },
-                    {
-                        label: "Escalated",
-                        value: "Escalated"
-                    },
-                    {
-                        label: "Closed",
-                        value: "Closed"
-                    }
-                ],
                 required: true
             },
             optionsResolver: {
-                dependencies: ["oauthConnection"],
+                dependencies: ["connection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
                     const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
-                        const session = await openResolverSession(api, config?.oauthConnection);
+                        const session = await openResolverSession(api, config?.connection);
                         const describeBody = await session.getJson(describePath("Case"));
 
                         return picklistOptions(describeBody, "Case", "Status");
@@ -107,30 +89,16 @@ export const createCaseNode = createNodeDescriptor({
                 default: "Origin"
             },
             params: {
-                options: [
-                    {
-                        label: "Phone",
-                        value: "Phone"
-                    },
-                    {
-                        label: "Email",
-                        value: "Email"
-                    },
-                    {
-                        label: "Web",
-                        value: "Web"
-                    }
-                ],
                 required: true
             },
             optionsResolver: {
-                dependencies: ["oauthConnection"],
+                dependencies: ["connection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
                     const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
-                        const session = await openResolverSession(api, config?.oauthConnection);
+                        const session = await openResolverSession(api, config?.connection);
                         const describeBody = await session.getJson(describePath("Case"));
 
                         return picklistOptions(describeBody, "Case", "Origin");
@@ -252,7 +220,7 @@ export const createCaseNode = createNodeDescriptor({
         },
     ],
     form: [
-        { type: "field", key: "oauthConnection" },
+        { type: "field", key: "connection" },
         { type: "field", key: "Status" },
         { type: "field", key: "Origin" },
         { type: "field", key: "Subject" },
@@ -271,11 +239,11 @@ export const createCaseNode = createNodeDescriptor({
     },
     function: async ({ cognigy, config, childConfigs }: ICreateCaseParams) => {
         const { api } = cognigy;
-        const { Status, Origin, Subject, Description, additionalCaseDetails, oauthConnection, storeLocation, contextKey, inputKey } = config;
+        const { Status, Origin, Subject, Description, additionalCaseDetails, connection, storeLocation, contextKey, inputKey } = config;
 
         try {
 
-            const salesforceConnection = await authenticate(oauthConnection);
+            const salesforceConnection = await authenticate(connection);
 
             // Single record creation
             const record = await salesforceConnection.sobject("Case").create({
