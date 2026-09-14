@@ -44,6 +44,38 @@ export const summariseError = (error: any): string => {
     return `[status=${responseStatus ?? "n/a"}] ${base}${detail}`;
 };
 
+/**
+ * Bounds an attempt so a hanging transport cannot stall the resolver.
+ *
+ * axios applies no default timeout, so if the resolver sandbox has no egress the
+ * fallback attempt waits for the operating system to give up on the connection.
+ * The editor gives a resolver only a few seconds before reporting "error loading
+ * select options" and retrying, which is what a repeating warning looks like, so
+ * each attempt must fail fast enough to leave time to report why.
+ */
+export const withDeadline = <T>(work: Promise<T>, milliseconds: number, label: string): Promise<T> => {
+    let timer: any;
+
+    const expiry = new Promise<T>((resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${milliseconds}ms`)), milliseconds);
+    });
+
+    return Promise.race([work, expiry]).then(
+        (value: T) => {
+            clearTimeout(timer);
+
+            return value;
+        },
+        (error: any) => {
+            clearTimeout(timer);
+
+            throw error;
+        }
+    );
+};
+
+export const ATTEMPT_TIMEOUT_MS = 2500;
+
 export const describePath = (entityName: string): string =>
     `/services/data/v${RESOLVER_API_VERSION}/sobjects/${encodeURIComponent(entityName)}/describe`;
 
@@ -72,7 +104,7 @@ export const openResolverSession = async (
 
     if (typeof httpRequest === "function") {
         try {
-            const authResponse = await httpRequest({
+            const authResponse = await withDeadline(httpRequest({
                 method: "POST",
                 url: `${instanceUrl}/services/oauth2/token`,
                 headers: {
@@ -83,7 +115,7 @@ export const openResolverSession = async (
                     client_id: consumerKey,
                     client_secret: consumerSecret
                 }
-            });
+            }), ATTEMPT_TIMEOUT_MS, "api.httpRequest token request");
 
             const accessToken = authResponse?.data?.access_token;
 
@@ -91,13 +123,13 @@ export const openResolverSession = async (
                 return {
                     via: "api.httpRequest",
                     getJson: async (path: string) => {
-                        const response = await httpRequest({
+                        const response = await withDeadline(httpRequest({
                             method: "GET",
                             url: `${instanceUrl}${path}`,
                             headers: {
                                 Authorization: `Bearer ${accessToken}`
                             }
-                        });
+                        }), ATTEMPT_TIMEOUT_MS, "api.httpRequest describe");
 
                         return response?.data;
                     }
@@ -113,12 +145,12 @@ export const openResolverSession = async (
     }
 
     try {
-        const connection = await authenticate(oauthConnection);
+        const connection = await withDeadline(authenticate(oauthConnection), ATTEMPT_TIMEOUT_MS, "authenticate");
 
         return {
             via: "authenticate",
             getJson: async (path: string) => {
-                const response = await connection.request({ method: "GET", url: path });
+                const response = await withDeadline(connection.request({ method: "GET", url: path }), ATTEMPT_TIMEOUT_MS, "authenticate describe");
 
                 return response?.data;
             }

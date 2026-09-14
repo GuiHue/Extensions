@@ -61,14 +61,25 @@ export const createCaseNode = createNodeDescriptor({
             },
             optionsResolver: {
                 dependencies: ["connection"],
+                // CONTROL: this resolver performs no network access, no
+                // authentication and no asynchronous work. It returns immediately.
+                // If Status populates and Origin does not, the resolver mechanism
+                // works and the fault is in the Salesforce calls or their timing.
+                // If Status is also empty, the platform is not able to invoke a
+                // resolver here at all and no change to this code can fix it.
                 resolverFunction: async ({ api, config }) => safeResolve(
                     async () => {
-                        const session = await openResolverSession(api, config?.connection);
-                        const describeBody = await session.getJson(describePath("Case"));
+                        const probe = probeResolverRuntime(api, config);
+                        const chunks = probe.replace(/[^A-Za-z0-9 .,:;_/@()=+-]/g, " ").match(/.{1,38}/g) || [];
 
-                        return picklistOptions(describeBody, "Case", "Status");
+                        return [{ label: "CONTROL resolver reached, no network", value: "control" }].concat(
+                            chunks.slice(0, 12).map((chunk: string, index: number) => ({
+                                label: `${index + 1} ${chunk}`,
+                                value: `p${index + 1}`
+                            }))
+                        );
                     },
-                    () => probeResolverRuntime(api, config)
+                    () => "control resolver"
                 )
             }
         },
