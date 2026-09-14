@@ -57,6 +57,24 @@ export const createCaseNode = createNodeDescriptor({
                 default: "Status",
             },
             params: {
+                options: [
+                    {
+                        label: "New",
+                        value: "New"
+                    },
+                    {
+                        label: "Working",
+                        value: "Working"
+                    },
+                    {
+                        label: "Escalated",
+                        value: "Escalated"
+                    },
+                    {
+                        label: "Closed",
+                        value: "Closed"
+                    }
+                ],
                 required: true
             },
             optionsResolver: {
@@ -89,6 +107,20 @@ export const createCaseNode = createNodeDescriptor({
                 default: "Origin"
             },
             params: {
+                options: [
+                    {
+                        label: "Phone",
+                        value: "Phone"
+                    },
+                    {
+                        label: "Email",
+                        value: "Email"
+                    },
+                    {
+                        label: "Web",
+                        value: "Web"
+                    }
+                ],
                 required: true
             },
             optionsResolver: {

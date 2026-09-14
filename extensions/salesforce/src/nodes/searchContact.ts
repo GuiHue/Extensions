@@ -65,6 +65,44 @@ export const searchContactNode = createNodeDescriptor({
             },
             defaultValue: "Phone",
             params: {
+                options: [
+                    {
+                        label: "Phone",
+                        value: "Phone"
+                    },
+                    {
+                        label: "Mobile Phone",
+                        value: "MobilePhone"
+                    },
+                    {
+                        label: "Home Phone",
+                        value: "HomePhone"
+                    },
+                    {
+                        label: "Email",
+                        value: "Email"
+                    },
+                    {
+                        label: "First Name",
+                        value: "FirstName"
+                    },
+                    {
+                        label: "Last Name",
+                        value: "LastName"
+                    },
+                    {
+                        label: "Full Name",
+                        value: "Name"
+                    },
+                    {
+                        label: "Contact ID",
+                        value: "Id"
+                    },
+                    {
+                        label: "Account ID",
+                        value: "AccountId"
+                    }
+                ],
                 required: true,
             },
             optionsResolver: {
