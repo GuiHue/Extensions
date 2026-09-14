@@ -1,7 +1,7 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { assertSoqlFieldName, escapeSoqlLike } from "../soql";
-import { describePath, diagnosticOptions, openResolverSession, probeResolverRuntime, summariseError } from "../optionsResolver";
+import { describePath, diagnosticOptions, openResolverSession, probeResolverRuntime, summariseError, tryResolverLog } from "../optionsResolver";
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
     config: {
@@ -71,6 +71,7 @@ export const searchContactNode = createNodeDescriptor({
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
+                    const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
                         const session = await openResolverSession(api, config?.oauthConnection);
@@ -86,9 +87,11 @@ export const searchContactNode = createNodeDescriptor({
                             value: field.name,
                         }));
                     } catch (error) {
+                        tryResolverLog(api, `Cognigy Salesforce resolver failed: ${probe} ERROR=${summariseError(error)}`);
+
                         return diagnosticOptions(
                             "Contact fields did not load - read the entries below",
-                            `${probe} ERROR=${summariseError(error)}`
+                            `${probe} ${logged} ERROR=${summariseError(error)}`
                         );
                     }
                 },

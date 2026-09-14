@@ -1,7 +1,7 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { escapeSoqlString } from "../soql";
-import { describePath, diagnosticOptions, openResolverSession, picklistOptions, probeResolverRuntime, summariseError } from "../optionsResolver";
+import { describePath, diagnosticOptions, openResolverSession, picklistOptions, probeResolverRuntime, summariseError, tryResolverLog } from "../optionsResolver";
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
     config: {
@@ -63,6 +63,7 @@ export const createCaseNode = createNodeDescriptor({
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
+                    const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
                         const session = await openResolverSession(api, config?.oauthConnection);
@@ -70,9 +71,11 @@ export const createCaseNode = createNodeDescriptor({
 
                         return picklistOptions(describeBody, "Case", "Status");
                     } catch (error) {
+                        tryResolverLog(api, `Cognigy Salesforce resolver failed: ${probe} ERROR=${summariseError(error)}`);
+
                         return diagnosticOptions(
                             "Case.Status did not load - read the entries below",
-                            `${probe} ERROR=${summariseError(error)}`
+                            `${probe} ${logged} ERROR=${summariseError(error)}`
                         );
                     }
                 }
@@ -92,6 +95,7 @@ export const createCaseNode = createNodeDescriptor({
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
                     const probe = probeResolverRuntime(api, config);
+                    const logged = tryResolverLog(api, `Cognigy Salesforce resolver probe: ${probe}`);
 
                     try {
                         const session = await openResolverSession(api, config?.oauthConnection);
@@ -99,9 +103,11 @@ export const createCaseNode = createNodeDescriptor({
 
                         return picklistOptions(describeBody, "Case", "Origin");
                     } catch (error) {
+                        tryResolverLog(api, `Cognigy Salesforce resolver failed: ${probe} ERROR=${summariseError(error)}`);
+
                         return diagnosticOptions(
                             "Case.Origin did not load - read the entries below",
-                            `${probe} ERROR=${summariseError(error)}`
+                            `${probe} ${logged} ERROR=${summariseError(error)}`
                         );
                     }
                 }

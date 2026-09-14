@@ -164,6 +164,64 @@ export const picklistOptions = (describeBody: any, entityName: string, fieldName
  * usable Connected App credentials. Only the presence and length of the key and
  * secret are reported, never their values.
  */
+/**
+ * Lists everything the resolver's `api` object actually carries, own properties
+ * and prototype alike, with the type of each.
+ *
+ * The typings declare `IHttpExecutionApi` with a single optional `httpRequest`,
+ * while `log` belongs to `INodeExecutionAPI`, the runtime api a node's function
+ * receives. That is a statement about the declared type, not about the object
+ * the resolver is handed, so the object is enumerated rather than assumed.
+ */
+export const apiSurface = (api: any): string => {
+    if (!api || typeof api !== "object") {
+        return `api is ${typeof api}`;
+    }
+
+    const names: string[] = [];
+    let current = api;
+
+    while (current && current !== Object.prototype) {
+        for (const name of Object.getOwnPropertyNames(current)) {
+            if (name !== "constructor" && names.indexOf(name) === -1) {
+                names.push(name);
+            }
+        }
+        current = Object.getPrototypeOf(current);
+    }
+
+    return names
+        .map((name: string) => {
+            try {
+                return `${name}:${typeof api[name]}`;
+            } catch (error) {
+                return `${name}:<threw>`;
+            }
+        })
+        .join(",") || "<no members>";
+};
+
+/**
+ * Writes to the resolver's log if one turns out to be there.
+ *
+ * Returns what happened so the outcome can be reported through the options
+ * channel, which is the only output known to reach the editor. Never throws:
+ * a diagnostic must not become the failure it is meant to explain.
+ */
+export const tryResolverLog = (api: any, message: string): string => {
+    if (!api || typeof api.log !== "function") {
+        return `api.log=${typeof api?.log}(unusable)`;
+    }
+
+    try {
+        api.log("error", message);
+
+        return "api.log=called";
+    } catch (error) {
+        return `api.log=threw(${error instanceof Error ? error.message : "unknown"})`;
+    }
+};
+
 export const probeResolverRuntime = (api: any, config: any): string => {
     const connection = config?.oauthConnection;
     const describeSecret = (value: any): string =>
@@ -171,7 +229,7 @@ export const probeResolverRuntime = (api: any, config: any): string => {
 
     return [
         `api=${typeof api}`,
-        `api.httpRequest=${typeof api?.httpRequest}`,
+        `apiMembers={${apiSurface(api)}}`,
         `configKeys=[${Object.keys(config || {}).join(",")}]`,
         `oauthConnection=${typeof connection}`,
         `connectionKeys=[${Object.keys(connection || {}).join(",")}]`,
