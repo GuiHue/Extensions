@@ -180,7 +180,8 @@ export const searchContactNode = createNodeDescriptor({
     dependencies: {
         children: [
             "onFoundContact",
-            "onNotFoundContact"
+            "onNotFoundContact",
+            "onErrorSearchContact"
         ]
     },
     function: async ({ cognigy, config, childConfigs }: ISearchContactParams) => {
@@ -215,7 +216,7 @@ export const searchContactNode = createNodeDescriptor({
                 : JSON.stringify(error);
             api.log("error", `searchContact execution failed: ${errorMessage}`);
 
-            const onErrorChild = childConfigs.find(child => child.type === "onErrorGetCase");
+            const onErrorChild = childConfigs.find(child => child.type === "onErrorSearchContact");
             api.setNextNode(onErrorChild.id);
 
             if (storeLocation === "context") {
@@ -255,6 +256,29 @@ export const onNotFoundContact = createNodeDescriptor({
     type: "onNotFoundContact",
     parentType: "searchContact",
     defaultLabel: "On Not Found",
+    constraints: {
+        editable: false,
+        deletable: false,
+        creatable: false,
+        movable: false,
+        placement: {
+            predecessor: {
+                whitelist: []
+            }
+        }
+    },
+    appearance: {
+        color: "#cf142b",
+        textColor: "white",
+        variant: "mini",
+        showIcon: false
+    }
+});
+
+export const onErrorSearchContact = createNodeDescriptor({
+    type: "onErrorSearchContact",
+    parentType: "searchContact",
+    defaultLabel: "On Error",
     constraints: {
         editable: false,
         deletable: false,
