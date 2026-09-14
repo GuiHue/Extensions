@@ -1,5 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
+import { escapeSoqlString } from "../soql";
 import { describePath, openResolverSession, picklistOptions, summariseError } from "../optionsResolver";
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
@@ -237,7 +238,8 @@ export const createCaseNode = createNodeDescriptor({
                 ...additionalCaseDetails
             });
 
-            const queryRecord = await salesforceConnection.query(`SELECT Id, CaseNumber from Case Where Id = '${record?.id}'`);
+            const recordId: string = escapeSoqlString(record?.id);
+            const queryRecord = await salesforceConnection.query(`SELECT Id, CaseNumber from Case Where Id = '${recordId}'`);
 
             const onSuccessChild = childConfigs.find(child => child.type === "onSuccessCreateCase");
             api.setNextNode(onSuccessChild.id);

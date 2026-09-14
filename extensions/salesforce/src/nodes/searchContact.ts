@@ -1,5 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
+import { assertSoqlFieldName, escapeSoqlLike } from "../soql";
 import { describePath, openResolverSession, summariseError } from "../optionsResolver";
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
@@ -192,7 +193,9 @@ export const searchContactNode = createNodeDescriptor({
 
             const salesforceConnection = await authenticate(oauthConnection);
 
-            const soql: string = `SELECT FIELDS(All) FROM Contact WHERE ${contactField} LIKE '${contactFieldValue}' LIMIT 200`;
+            const searchField: string = assertSoqlFieldName(contactField);
+            const searchValue: string = escapeSoqlLike(contactFieldValue);
+            const soql: string = `SELECT FIELDS(All) FROM Contact WHERE ${searchField} LIKE '${searchValue}' LIMIT 200`;
             const record = await salesforceConnection.query(soql, { autoFetch: true, maxFetch: 1 });
 
             if (record.records.length === 0) {

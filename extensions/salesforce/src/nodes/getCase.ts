@@ -1,5 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
+import { escapeSoqlLike } from "../soql";
 
 export interface IGetCaseParams extends INodeFunctionBaseParams {
     config: {
@@ -135,7 +136,8 @@ export const getCaseNode = createNodeDescriptor({
 
             const salesforceConnection = await authenticate(oauthConnection);
 
-            const soql: string = `SELECT FIELDS(All) FROM Case WHERE CaseNumber LIKE '${caseNumber}' LIMIT 200`;
+            const searchValue: string = escapeSoqlLike(caseNumber);
+            const soql: string = `SELECT FIELDS(All) FROM Case WHERE CaseNumber LIKE '${searchValue}' LIMIT 200`;
             const record = await salesforceConnection.query(soql, { autoFetch: true, maxFetch: 1 });
 
             if (record.records.length === 0) {
