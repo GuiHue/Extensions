@@ -1,7 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { escapeSoqlString } from "../soql";
-import { describePath, openResolverSession, picklistOptions, probeResolverRuntime, safeResolve } from "../optionsResolver";
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
     config: {
@@ -51,7 +50,7 @@ export const createCaseNode = createNodeDescriptor({
         },
         {
             key: "Status",
-            type: "select",
+            type: "cognigyText",
             label: {
                 deDE: "Status",
                 default: "Status",
@@ -59,33 +58,10 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
-            optionsResolver: {
-                dependencies: ["connection"],
-                // CONTROL: this resolver performs no network access, no
-                // authentication and no asynchronous work. It returns immediately.
-                // If Status populates and Origin does not, the resolver mechanism
-                // works and the fault is in the Salesforce calls or their timing.
-                // If Status is also empty, the platform is not able to invoke a
-                // resolver here at all and no change to this code can fix it.
-                resolverFunction: async ({ api, config }) => safeResolve(
-                    async () => {
-                        const probe = probeResolverRuntime(api, config);
-                        const chunks = probe.replace(/[^A-Za-z0-9 .,:;_/@()=+-]/g, " ").match(/.{1,38}/g) || [];
-
-                        return [{ label: "CONTROL resolver reached, no network", value: "control" }].concat(
-                            chunks.slice(0, 12).map((chunk: string, index: number) => ({
-                                label: `${index + 1} ${chunk}`,
-                                value: `p${index + 1}`
-                            }))
-                        );
-                    },
-                    () => "control resolver"
-                )
-            }
         },
         {
             key: "Origin",
-            type: "select",
+            type: "cognigyText",
             label: {
                 deDE: "Herkunft",
                 default: "Origin"
@@ -93,18 +69,6 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
-            optionsResolver: {
-                dependencies: ["connection"],
-                resolverFunction: async ({ api, config }) => safeResolve(
-                    async () => {
-                        const session = await openResolverSession(api, config?.connection);
-                        const describeBody = await session.getJson(describePath("Case"));
-
-                        return picklistOptions(describeBody, "Case", "Origin");
-                    },
-                    () => probeResolverRuntime(api, config)
-                )
-            }
         },
         {
             key: "Subject",

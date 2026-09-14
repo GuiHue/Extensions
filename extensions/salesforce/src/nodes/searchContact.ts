@@ -1,7 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
 import { assertSoqlFieldName, escapeSoqlLike } from "../soql";
-import { describePath, openResolverSession, probeResolverRuntime, safeResolve } from "../optionsResolver";
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
     config: {
@@ -54,7 +53,7 @@ export const searchContactNode = createNodeDescriptor({
         },
         {
             key: "contactField",
-            type: "select",
+            type: "cognigyText",
             label: {
                 deDE: "Feld",
                 default: "Field"
@@ -67,22 +66,6 @@ export const searchContactNode = createNodeDescriptor({
             params: {
                 required: true,
             },
-            optionsResolver: {
-                dependencies: ["connection"],
-                resolverFunction: async ({ api, config }) => safeResolve(
-                    async () => {
-                        const session = await openResolverSession(api, config?.connection);
-                        const describeBody = await session.getJson(describePath("Contact"));
-                        const fields: ISalesforceContactField[] = describeBody?.fields || [];
-
-                        return fields.map((field: ISalesforceContactField) => ({
-                            label: field.label,
-                            value: field.name,
-                        }));
-                    },
-                    () => probeResolverRuntime(api, config)
-                ),
-            }
         },
         {
             key: "contactFieldValue",
