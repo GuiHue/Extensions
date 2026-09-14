@@ -58,7 +58,7 @@ export const createCaseNode = createNodeDescriptor({
         },
         {
             key: "Status",
-            type: "select",
+            type: "cognigyText",
             label: {
                 deDE: "Status",
                 default: "Status",
@@ -66,69 +66,10 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
-            optionsResolver: {
-                dependencies: ["oauthConnection"],
-                resolverFunction: async ({ api, config }) => {
-                    try {
-                        const { consumerKey, consumerSecret, instanceUrl }: ICreateCaseParams["config"]["oauthConnection"] = config.oauthConnection;
-
-                        // Phase 1 diagnostic: `httpRequest` is optional on IHttpExecutionApi.
-                        if (typeof api.httpRequest !== "function") {
-                            throw new Error("[status=n/a] api.httpRequest is not available in the optionsResolver runtime.");
-                        }
-
-                        const data = `grant_type=client_credentials&client_id=${encodeURIComponent(consumerKey)}&client_secret=${encodeURIComponent(consumerSecret)}`;
-
-                        // Step 1: Authenticate with Salesforce using OAuth2
-                        const authResponse = await api.httpRequest({
-                            method: "POST",
-                            url: `${instanceUrl}/services/oauth2/token`,
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                            },
-                            // @ts-ignore
-                            data: data
-                        });
-
-                        // Step 2: Query Salesforce to get Case Statuses
-                        const queryResponse = await api.httpRequest({
-                            method: "GET",
-                            url: `${instanceUrl}/services/data/v56.0/query?q=${encodeURIComponent(
-                                "SELECT Id, MasterLabel FROM CaseStatus"
-                            )}`,
-                            headers: {
-                                Authorization: `Bearer ${authResponse?.data?.access_token}`,
-                            },
-                        });
-
-                        const statuses: ISalesforceCaseStatus[] = queryResponse?.data?.records;
-
-                        // Step 3: Map statuses to "options array"
-                        return statuses.map((status: ISalesforceCaseStatus) => ({
-                            label: status.MasterLabel,
-                            value: status.Id,
-                        }));
-                    } catch (error) {
-                        // Phase 1 diagnostic: surface the Salesforce response body, which
-                        // carries the actionable `error` / `error_description` fields that
-                        // `error.message` alone ("Request failed with status code 400") drops.
-                        const httpError: any = error;
-                        const httpStatus = httpError?.response?.status;
-                        const responseBody = httpError?.response?.data;
-                        const detail = responseBody === undefined || responseBody === null
-                            ? undefined
-                            : (typeof responseBody === "string" ? responseBody : JSON.stringify(responseBody));
-                        const baseMessage = error instanceof Error
-                            ? error.message
-                            : JSON.stringify(error);
-                        throw new Error(`[status=${httpStatus ?? "n/a"}] ${baseMessage}${detail ? ` :: ${detail}` : ""}`);
-                    }
-                }
-            }
         },
         {
             key: "Origin",
-            type: "select",
+            type: "cognigyText",
             label: {
                 deDE: "Herkunft",
                 default: "Origin"
@@ -136,67 +77,6 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
-            optionsResolver: {
-                dependencies: ["oauthConnection"],
-                resolverFunction: async ({ api, config }) => {
-                    try {
-                        const { consumerKey, consumerSecret, instanceUrl }: ICreateCaseParams["config"]["oauthConnection"] = config.oauthConnection;
-
-                        // Phase 1 diagnostic: `httpRequest` is optional on IHttpExecutionApi.
-                        if (typeof api.httpRequest !== "function") {
-                            throw new Error("[status=n/a] api.httpRequest is not available in the optionsResolver runtime.");
-                        }
-
-                        // Step 1: Authenticate with Salesforce using OAuth2
-                        const data = `grant_type=client_credentials&client_id=${encodeURIComponent(consumerKey)}&client_secret=${encodeURIComponent(consumerSecret)}`;
-
-                        const authResponse = await api.httpRequest({
-                            method: "POST",
-                            url: `${instanceUrl}/services/oauth2/token`,
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                            },
-                            // @ts-ignore
-                            data: data,
-                        });
-
-                        // Step 2: Retrieve picklist values for the 'Case.Origin' field
-                        const metadataResponse = await api.httpRequest({
-                            method: "GET",
-                            url: `${instanceUrl}/services/data/v56.0/sobjects/Case/describe`,
-                            headers: {
-                                Authorization: `Bearer ${authResponse?.data?.access_token}`,
-                            },
-                        });
-
-                        const fields = metadataResponse?.data?.fields || [];
-                        const originField = fields.find((field: any) => field.name === 'Origin');
-
-                        // Step 3: Map active picklist values to the options array
-                        return originField.picklistValues
-                            .filter((picklistValue: any) => picklistValue.active)
-                            .map((picklistValue: any) => ({
-                                label: picklistValue.label,
-                                value: picklistValue.label,
-                            }));
-
-                    } catch (error) {
-                        // Phase 1 diagnostic: surface the Salesforce response body, which
-                        // carries the actionable `error` / `error_description` fields that
-                        // `error.message` alone ("Request failed with status code 400") drops.
-                        const httpError: any = error;
-                        const httpStatus = httpError?.response?.status;
-                        const responseBody = httpError?.response?.data;
-                        const detail = responseBody === undefined || responseBody === null
-                            ? undefined
-                            : (typeof responseBody === "string" ? responseBody : JSON.stringify(responseBody));
-                        const baseMessage = error instanceof Error
-                            ? error.message
-                            : JSON.stringify(error);
-                        throw new Error(`[status=${httpStatus ?? "n/a"}] ${baseMessage}${detail ? ` :: ${detail}` : ""}`);
-                    }
-                },
-            }
         },
         {
             key: "Subject",
