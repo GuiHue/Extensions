@@ -1,5 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
+import { describePath, openResolverSession, picklistOptions, summariseError } from "../optionsResolver";
 
 export interface ICreateCaseParams extends INodeFunctionBaseParams {
     config: {
@@ -17,15 +18,6 @@ export interface ICreateCaseParams extends INodeFunctionBaseParams {
         contextKey: string;
         inputKey: string;
     };
-}
-
-interface ISalesforceCaseStatus {
-    attributes: any[];
-    Id: string;
-    MasterLabel: string;
-    SortOrder: number;
-    IsDefault: boolean;
-    IsClosed: boolean;
 }
 
 interface SalesforceCase {
@@ -58,7 +50,7 @@ export const createCaseNode = createNodeDescriptor({
         },
         {
             key: "Status",
-            type: "cognigyText",
+            type: "select",
             label: {
                 deDE: "Status",
                 default: "Status",
@@ -66,10 +58,23 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
+            optionsResolver: {
+                dependencies: ["oauthConnection"],
+                resolverFunction: async ({ api, config }) => {
+                    try {
+                        const session = await openResolverSession(api, config.oauthConnection);
+                        const describeBody = await session.getJson(describePath("Case"));
+
+                        return picklistOptions(describeBody, "Case", "Status");
+                    } catch (error) {
+                        throw new Error(`Could not load Case.Status values: ${summariseError(error)}`);
+                    }
+                }
+            }
         },
         {
             key: "Origin",
-            type: "cognigyText",
+            type: "select",
             label: {
                 deDE: "Herkunft",
                 default: "Origin"
@@ -77,6 +82,19 @@ export const createCaseNode = createNodeDescriptor({
             params: {
                 required: true
             },
+            optionsResolver: {
+                dependencies: ["oauthConnection"],
+                resolverFunction: async ({ api, config }) => {
+                    try {
+                        const session = await openResolverSession(api, config.oauthConnection);
+                        const describeBody = await session.getJson(describePath("Case"));
+
+                        return picklistOptions(describeBody, "Case", "Origin");
+                    } catch (error) {
+                        throw new Error(`Could not load Case.Origin values: ${summariseError(error)}`);
+                    }
+                }
+            }
         },
         {
             key: "Subject",

@@ -1,5 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import { authenticate } from "../authenticate";
+import { describePath, openResolverSession, summariseError } from "../optionsResolver";
 
 export interface ISearchContactParams extends INodeFunctionBaseParams {
     config: {
@@ -69,41 +70,20 @@ export const searchContactNode = createNodeDescriptor({
                 dependencies: ["oauthConnection"],
                 resolverFunction: async ({ api, config }) => {
                     try {
-                        const { consumerKey, consumerSecret, instanceUrl }: ISearchContactParams["config"]["oauthConnection"] = config.oauthConnection;
+                        const session = await openResolverSession(api, config.oauthConnection);
+                        const describeBody = await session.getJson(describePath("Contact"));
+                        const fields: ISalesforceContactField[] = describeBody?.fields || [];
 
-                        // Step 1: Authenticate with Salesforce using OAuth2
-                        const data = `grant_type=client_credentials&client_id=${encodeURIComponent(consumerKey)}&client_secret=${encodeURIComponent(consumerSecret)}`;
+                        if (fields.length === 0) {
+                            throw new Error("The Contact describe response contained no fields.");
+                        }
 
-                        const authResponse = await api.httpRequest({
-                            method: "POST",
-                            url: `${instanceUrl}/services/oauth2/token`,
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                            },
-                            // @ts-ignore
-                            data: data,
-                        });
-
-                        // Step 2: Retrieve the metadata for the "Contact" object
-                        const describeResponse = await api.httpRequest({
-                            method: "GET",
-                            url: `${instanceUrl}/services/data/v56.0/sobjects/Contact/describe`,
-                            headers: {
-                                Authorization: `Bearer ${authResponse?.data?.access_token}`,
-                            },
-                        });
-
-                        // Step 3: Map the fields to an array with label and name
-                        return describeResponse?.data?.fields.map((field: ISalesforceContactField) => ({
+                        return fields.map((field: ISalesforceContactField) => ({
                             label: field.label,
                             value: field.name,
                         }));
-
                     } catch (error) {
-                        const errorMessage = error instanceof Error
-                            ? error.message
-                            : JSON.stringify(error);
-                        throw new Error(`Error retrieving Contact fields: ${errorMessage}`);
+                        throw new Error(`Could not load Contact fields: ${summariseError(error)}`);
                     }
                 },
             }
