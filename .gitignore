@@ -17,3 +17,7 @@ coverage/
 *.tar.gz
 /**/.DS_Store
 .history
+# Build artefact tracked deliberately: this repo is the transfer channel for the
+# salesforce-pxc extension bundle. Narrow negation - all other build output,
+# archives and credential files stay ignored.
+!extensions/salesforce/salesforce.tar.gz
