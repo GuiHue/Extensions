@@ -28,6 +28,8 @@ When the tool is available, update `system-prompt.md`:
 
 ## 3. Capabilities removed (users will ask)
 
-No tools for availability/stock, delivery dates, CAD data, images, software downloads, compliance documents.
-These are referred to the local Phoenix Contact representative. Approvals/certifications are answered from
+Availability/stock and delivery checks are not offered in clipx ENGINEER (product decision); the prompt contains
+no availability logic. If users ask anyway, PIA refers them to the local Phoenix Contact representative.
+
+No tools for CAD data, images, software downloads, compliance documents. These are referred to the local Phoenix Contact representative. Approvals/certifications are answered from
 `retrieve_product_information` only.
