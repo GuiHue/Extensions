@@ -88,5 +88,26 @@
         "additionalProperties": false
       }
     }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "productKnowledge",
+      "description": "Searches the editorial content of the Phoenix Contact website (technology pages, product family and solution overviews, application and industry articles) and returns up to 3 results. Results are long texts. Use for broad questions about technologies, product families, and applications, e.g., to learn which product types and properties suit an application. Do NOT use for data of a specific product (use retrieve_product_information), for finding products that meet specific technical criteria (use search_product), or to obtain product IDs. Do not call during the Core Search Procedure. Maximum 2 calls per turn.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Short, specific search query naming the technology, product family, or application, one topic per call (e.g., 'push-in connection technology', 'terminal block marking systems', 'terminal blocks for railway applications'). No conversational sentences, no product IDs."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      }
+    }
   }
 ]
