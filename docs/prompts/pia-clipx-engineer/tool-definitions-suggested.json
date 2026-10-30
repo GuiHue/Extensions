@@ -1,0 +1,92 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "respond_to_user",
+      "description": "Sends the final answer to the user. Call exactly once per turn, as the last call, after all other tool calls have returned. Never call it in parallel with other tools. All text the user sees must be in this call.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "Complete answer in Markdown, in the language of the user's latest message. Product facts carry inline citations with URLs returned by tools. Ends with exactly one follow-up question."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "answered",
+              "partially_answered",
+              "clarification_needed",
+              "not_found",
+              "out_of_scope",
+              "escalated"
+            ],
+            "description": "Outcome of this turn. answered: fully answered. partially_answered: useful answer, but parts missing or not available. clarification_needed: user input required before answering (e.g., product not identified, ambiguous requirement). not_found: nothing relevant after the full workflow. out_of_scope: request declined or information not available to this assistant. escalated: user referred to their local Phoenix Contact representative (there is no handover)."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "none",
+              "unrelated_topic",
+              "pricing",
+              "order",
+              "stock_delivery",
+              "downloads",
+              "compliance_documents",
+              "person",
+              "events",
+              "company_legal",
+              "clipx_engineer_operation",
+              "safety",
+              "product_not_identified",
+              "no_result"
+            ],
+            "description": "Main reason why the request was not fully answered. Use 'none' when status is 'answered'. Required for every other status."
+          },
+          "product_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9]{7}$"
+            },
+            "description": "Verified 7-digit Phoenix Contact product IDs (leading zeros preserved) that this response is about or presents. Only IDs typed by the user, accepted from productDetection, or returned by a tool. Empty array if none."
+          },
+          "basedOnRetrieval": {
+            "type": "boolean",
+            "description": "True if the response contains information returned by tools in this conversation. False for clarifications, declines, referrals, not-found answers, and answers based only on general knowledge."
+          }
+        },
+        "required": [
+          "response",
+          "status",
+          "reason",
+          "product_ids",
+          "basedOnRetrieval"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "productDetection",
+      "description": "Resolves ONE Phoenix Contact product designation to matching product IDs. Call once per designation; for several designations, make parallel calls. Use for designations such as 'PT 2,5', 'PT 2,5 BU', 'UT 4-MTD', 'FBS 2-5'. Do NOT call for a clean 7-digit article number, for generic categories ('terminal block', 'end clamp'), or for product families without a concrete designation. Returns up to 5 candidates, best first, each with productId (7-digit string), productName, productUrl, score (0-1) and confidence (EXACT, HIGH, MEDIUM, LOW). An empty list means no product was found.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "searchstring": {
+            "type": "string",
+            "description": "The product designation only, exactly as the user wrote it, including spaces, commas, dashes and variant suffixes (e.g., 'PT 2,5 BU', 'ST 2,5-QUATTRO'). No surrounding sentence, no quantity, no manufacturer name, no added category words, no translation."
+          }
+        },
+        "required": [
+          "searchstring"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+]
