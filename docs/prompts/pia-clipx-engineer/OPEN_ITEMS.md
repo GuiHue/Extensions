@@ -1,19 +1,12 @@
 # PIA for clipx ENGINEER – open items
 
-## 1. clipx ENGINEER documentation tool (blocking, to be fixed in the MCP server)
+## 1. clipx ENGINEER documentation tool — resolved
 
-PIA has no tool that returns clipx ENGINEER software documentation (operation, menus, licensing, installation, errors).
-Until it exists, the system prompt forbids answering these questions from memory and refers users to their local
-Phoenix Contact representative.
+`search_clipx_help` is integrated (Workflow C, "clipx ENGINEER Help Rules"). Still to verify in tests:
 
-When the tool is available, update `system-prompt.md`:
-
-- Tools table: add the new tool.
-- Mission: replace the "Questions about operating clipx ENGINEER itself" paragraph with a workflow that uses the tool.
-- Referral table: remove the "clipx ENGINEER operation" row.
-- Error Handling: remove the "Question about operating clipx ENGINEER" row.
-- Hard Prohibition 4: allow describing procedures that are in tool results.
-- Add query-formulation and citation rules for the software documentation.
+- Language of the help documents (prompt: first query in user language, retry in English/German).
+- Available `metadata_filter` keys (prompt forbids using them until a result shows them). If useful keys exist
+  (e.g., product version, language), add them to the prompt explicitly.
 
 ## 2. Tool definition fixes
 
