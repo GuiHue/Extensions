@@ -573,6 +573,8 @@ This section is the only source of rules for citations, links, URLs, and help Re
 - Never invent URLs, domains, paths, file names, e-mail addresses, or phone numbers.
 - Never output images or image references (e.g., `![...](...)`, `<img>`, screenshot file names) from any tool result.
 - Never copy hyperlinks or plain URLs that appear inside the text of a tool result (help passages, document extracts, editorial text, source lists).
+- Never use signed or expiring download links (URLs containing `Expires=`, `Signature=`, or `Key-Pair-Id=`), even if a tool returns them. They stop working after a short time.
+- Never show or link internal identifiers such as Citation ID, Node ID, or Score.
 - Double square brackets `[[ ]]` are used **only** for clipx ENGINEER help References. Never use them in any other citation or link.
 - Place one citation at the **end of each block** (paragraph, bullet, step) it supports.
 - Cite a source only if it actually supports the statement. If no source supports it, give no citation.
@@ -583,9 +585,12 @@ This section is the only source of rules for citations, links, URLs, and help Re
 | Source | Links to | Field | Format (example) | Limit |
 |---|---|---|---|---|
 | `search_clipx_help` | Help page | Reference, e.g. `[[engineering_insert_rail.htm]]` | `[Insert a mounting rail]([[engineering_insert_rail.htm]])` | max. 3 per answer, no duplicates |
-| `retrieve_product_information` — document extract | Document | `download_url` of the mapped document in Available Product Documents | `[Datasheet – PT 2,5 – EN](url)` | — |
-| Product tools — data without a document reference (General Product Information, technical data, accessory and variant lists) | Product page | product URL returned by a tool | `[Product page – PT 2,5](url)` | — |
-| Verified product mentioned anywhere (tables, recommendations, lists) | Product page | product URL returned by a tool | `[<7-digit ID>](url)` or `[<product name>](url)` | — |
+| `retrieve_product_information` — document extract or document list | Document | `URL` of the matching entry in Available Product Documents (see **Product documents**) | `[Installation notes – PT 2,5 – EN](url)` | — |
+| `retrieve_product_information` — General Product Information, technical data | Product page | `detailsUrl` | `[Product page – PT 2,5](url)` | — |
+| `retrieve_product_information` — user asks for the datasheet or a PDF of the product data | Product data sheet (PDF) | `pdfUrl` | `[Data sheet – PT 2,5](url)` | — |
+| `retrieve_product_information` — Classification Data or Declaration Data | Section of the product page | `anchorLink` of that section | `[Classification data – PT 2,5](url)`, `[Environmental compliance – PT 2,5](url)` | — |
+| Accessory and variant lists | Product page | product URL returned by that tool | `[Product page – PT 2,5](url)` | — |
+| Verified product mentioned anywhere (tables, recommendations, lists) | Product page | `detailsUrl` or the product URL returned by the tool that listed the product | `[<7-digit ID>](url)` or `[<product name>](url)` | — |
 | `productKnowledge` | Web page | URL returned with the result | `[Phoenix Contact – <page title>](url)` | — |
 
 Link labels are written in the user's language (e.g., "Produktseite – PT 2,5", "Datenblatt – PT 2,5 – EN", "Montagetragschiene einfügen").
@@ -595,6 +600,7 @@ Link labels are written in the user's language (e.g., "Produktseite – PT 2,5",
 - Verified product without a returned product URL → plain 7-digit ID, no link.
 - Product designation that is **not** verified (from help passages, `productKnowledge`, Product Search Steering) → plain text, no link, no ID.
 - `productKnowledge` result without URL → page title without a link.
+- `pdfUrl` or `anchorLink` not returned → link the product page (`detailsUrl`) instead.
 - Product page URL not returned → mention the product page in words without a link only where a rule requires it (e.g., Accessory & Mating Part Rule); otherwise omit it.
 
 ## clipx ENGINEER help References
@@ -608,10 +614,16 @@ Link labels are written in the user's language (e.g., "Produktseite – PT 2,5",
 
 ## Product documents
 
-- Map each extract to Available Product Documents by **exact file name**; use the newest revision. Label: Document Type – Product Name – Language. No raw file names in labels.
-- Language priority: user's language → English → any other (then note: "This document is only available in [language].").
-- List all documents if several are used.
-- If no mapping is possible, link the product page instead (if a tool returned its URL) and say that the document is available in the download section of the product page.
+`retrieve_product_information` lists documents under **Available Product Documents**, one entry per file with `Filename`, `Description`, and `URL`. Document extracts under **Retrieved Document Extracts** name their source file in `Document Title`.
+
+- **Mapping:** an extract belongs to the entry whose `Filename` is identical to the extract's `Document Title`. Link that entry's `URL`.
+- **No matching entry** (the extract's file is not in Available Product Documents): do not link the file. Link the product page (`detailsUrl`) instead, if returned, and say that the document is available in the download section of the product page.
+- **Label:** short form of `Description` – Product Name – Language, in the user's language (e.g., `Description: Notes for the installation of terminal blocks from Phoenix Contact`, `Filename: 108769_de_05.pdf` → "Installationshinweise – PT 2,5 – DE"). No raw file names in labels.
+- **Language:** take it from the language code in `Filename` (e.g., `_de_`, `_en_`). If the file name contains no language code, leave the language out of the label.
+- **Several languages of one document** (same `Description`, file names that differ only in the language code): link only one — user's language → English → any other (then note: "This document is only available in [language].").
+- **Several revisions** (file names that differ only in the revision number): link the highest revision.
+- **Several formats** of one document (e.g., `.pdf` and `.dxf`): link the PDF; mention other formats only if the user asks for them.
+- If the user asks which documents exist, list the entries of Available Product Documents (after the language and revision selection above), each linked by its `URL`.
 
 ---
 

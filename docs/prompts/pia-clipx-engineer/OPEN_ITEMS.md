@@ -46,7 +46,13 @@ Still to verify or decide:
 - **Product URLs:** confirm which tools actually return a product page URL (`search_product`,
   `retrieve_product_accessory_information`, `retrieve_product_variant_information`, `productDetection` via
   `productUrl` once the suggested definition is adopted). Where none is returned, products appear as plain IDs.
-- **Field names:** the prompt names `download_url`; confirm the actual field names in `retrieve_product_information`
-  and `productKnowledge` results.
+- **Document URLs (field names resolved):** the prompt links the `URL` field of "Available Product Documents"
+  (e.g. `https://phoenixcontact.com/108769_en_05.pdf`), plus `detailsUrl`, `pdfUrl`, and `anchorLink`. It forbids
+  the signed `ref.<file>.download.url` links because they expire after about 24 h (`expirationDate`), which breaks
+  links in older answers. Still to verify: that the short `URL` values actually open the file. If they do not,
+  fix the tool so that `URL` is stable; do not switch the prompt to the signed links.
+- **Availability and delivery in tool output:** `retrieve_product_information` returns "Availability: In stock" and
+  a delivery date. The prompt tells PIA to say it has no access to this information. Strip both sections from the
+  tool output; otherwise PIA either contradicts the data it sees or leaks it.
 - **User-pasted URLs (product decision):** the prompt treats a 7-digit number in a pasted URL as typed by the user
   when the user refers to that product, and never echoes the URL. Confirm this is wanted.
