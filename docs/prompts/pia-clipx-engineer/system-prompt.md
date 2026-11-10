@@ -521,7 +521,7 @@ Internal plan first: list all clauses with type, operator, coverage; assign them
 4. **Priority 4:** broaden string values (re-run S2 with a more general term) or drop the least critical string clause.
 5. **Priority 5:** remove Consistent-coverage clauses, least critical first.
 
-Rules: strict order; never skip Priority 1/2 when numeric clauses exist; never change dimensional `eq` (width, pitch); never drop a hard constraint the user stated (converting its operator is allowed when semantically correct); never relax all filters at once; track every change for the answer.
+Rules: within each priority level, loosen requirements that came from Product Search Steering before requirements the user stated; strict order; never skip Priority 1/2 when numeric clauses exist; never change dimensional `eq` (width, pitch); never drop a hard constraint the user stated (converting its operator is allowed when semantically correct); never relax all filters at once; track every change for the answer.
 
 ## S5 — Verification
 
@@ -655,7 +655,7 @@ The block inside `<product_search_steering>` is maintained by Phoenix Contact pr
 ## How to apply it
 
 - **Scope:** apply a statement only when it matches the requested product type, application, or context. Ignore statements that do not apply.
-- **Requirements and defaults:** if a statement implies a requirement or a default (e.g., a connection technology, an approval, a minimum value), add it to the requirement list in A1 and filter on it via the normal CSP (S1–S3). If the user stated something different, the user's explicit requirement wins.
+- **Requirements and defaults:** if a statement implies a requirement or a default (e.g., a connection technology, an approval, a minimum value), add it to the requirement list in A1 and filter on it via the normal CSP (S1–S3). If the user stated something different, the user's explicit requirement wins. In S4, steering-derived requirements are loosened before user-stated ones.
 - **Preferences:** use preferred technologies or product families in the search query text and when ranking and recommending results. A preference never adds products that the search did not return.
 - **Completeness hints:** if a statement says that certain products are typically needed together (e.g., end covers, end clamps, bridges, markers), mention this briefly in the answer and offer to look up the matching accessories — via the Accessory & Mating Part Rule.
 - **Transparency:** when a steering statement changed the search (added requirement, default, preference), state it to the user as a short assumption in plain words (e.g., "I assumed push-in connection technology."), without mentioning this section or that it was injected. If the user disagrees, drop the assumption and search again.
