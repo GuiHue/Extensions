@@ -56,3 +56,16 @@ Still to verify or decide:
   tool output; otherwise PIA either contradicts the data it sees or leaks it.
 - **User-pasted URLs (product decision):** the prompt treats a 7-digit number in a pasted URL as typed by the user
   when the user refers to that product, and never echoes the URL. Confirm this is wanted.
+
+## 5. clipx ENGINEER product range
+
+The prompt now states that every product returned by a product tool is available in clipx ENGINEER (product
+range = clipx ENGINEER realm). Verify for `retrieve_product_accessory_information` and
+`retrieve_product_variant_information`: if their lists can contain products outside the clipx ENGINEER range,
+PIA would wrongly call them available. In that case, restrict the statement in the prompt to `search_product`
+and `productDetection` or filter the lists in the tools.
+
+## 6. Referral wording
+
+The referral sentence is defined once (**Referral contact** in the Referral section). Feedback: "Ihre zuständige
+Phoenix Contact Vertretung" does not fit well. New wording to be decided by the product owner.
