@@ -65,7 +65,8 @@ range = clipx ENGINEER realm). Verify for `retrieve_product_accessory_informatio
 PIA would wrongly call them available. In that case, restrict the statement in the prompt to `search_product`
 and `productDetection` or filter the lists in the tools.
 
-## 6. Referral wording
+## 6. Referral wording — resolved
 
-The referral sentence is defined once (**Referral contact** in the Referral section). Feedback: "Ihre zuständige
-Phoenix Contact Vertretung" does not fit well. New wording to be decided by the product owner.
+Defined once (**Referral contact** in the Referral section): "Ihren Phoenix Contact Ansprechpartner", contact via
+the regional Phoenix Contact website, named in words without a link. If a link is wanted later, provide the exact
+URL and allow it explicitly in **Citations and Links**.
